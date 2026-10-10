@@ -52,6 +52,7 @@ hl.config({
 hl.on("hyprland.start", function()
 	hl.exec_cmd("noctalia --daemon")
 	-- hl.exec_cmd("systemctl --user start hyprpolkitagent") -- noctalia has a polkit agent
+	hl.exec_cmd("vicinae server")
 end)
 
 hl.bind(mod .. " + Return", hl.dsp.exec_cmd(term))
