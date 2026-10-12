@@ -9,7 +9,7 @@ onboarding = false
 # Built-in themes: catppuccin, terminal, tokyo-night, dracula, nord,
 #                  gruvbox, one-dark, solarized, kanagawa, rose-pine,
 #                  vesper
-# name = "catppuccin"
+name = "rose-pine"
 
 # Follow host terminal light/dark appearance and switch Herdr UI themes.
 # Existing manual behavior is unchanged unless this is true.
@@ -49,10 +49,10 @@ onboarding = false
 # channel = "stable"
 
 # Check herdr.dev for new Herdr versions in the background.
-version_check = true
+version_check = false
 
 # Check herdr.dev for remote agent-detection manifest updates in the background.
-manifest_check = true
+manifest_check = false
 
 [keys]
 # Prefix key to enter prefix mode (default: "ctrl+b")
@@ -281,6 +281,7 @@ detach = "prefix+d"
 # accent = "cyan"
 
 # Background notification popup delivery
+agent_panel_sort = "priority"
 [ui.toast]
 # off = disable pop-up notifications
 # herdr = show in-app toasts
