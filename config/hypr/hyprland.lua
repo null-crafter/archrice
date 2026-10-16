@@ -34,7 +34,7 @@ local PRESENT_GAPS_IN, PRESENT_GAPS_OUT = 15, 40
 
 hl.config({
 	general = { gaps_in = GAPS_IN, gaps_out = GAPS_OUT, border_size = 2, layout = "master" },
-	input = { kb_layout = "us", follow_mouse = 1, repeat_delay = 200, repeat_rate = 35 },
+	input = { kb_layout = "us", follow_mouse = 1, repeat_delay = 200, repeat_rate = 35, kb_options = "ctrl:nocaps" },
 	-- Wake the screens on pointer motion. Deliberately NOT key_press_enables_dpms:
 	-- that listener fires on key *release* too, so it would undo SUPER+Escape the
 	-- instant you let go. Nudge the mouse or trackpad to wake.
