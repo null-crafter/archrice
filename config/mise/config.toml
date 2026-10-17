@@ -41,4 +41,6 @@ claude-code = "latest"
 "pypi:rassumfrassum" = "latest"
 "npm:typescript" = "7"
 "pipx:rassumfrassum" = "latest"
+pandoc = "latest"
+typst = "latest"
 
