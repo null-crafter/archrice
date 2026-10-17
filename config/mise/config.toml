@@ -1,14 +1,10 @@
 [settings.npm]
 package_manager = "aube"
 
-[settings]
-plugin_autoupdate_last_check_duration = "2000d" #  do not check!
 
 [tools]
 aube = "latest"
 bun = "latest"
-"npm:@anthropic-ai/claude-code" = {version="latest", allow_builds = true}
-# "npm:opencode-with-claude" = {version="latest", allow_builds = true}
 
 "npm:husky" = "latest"
 "npm:opencode-ai" =  {version="latest", allow_builds = true}
@@ -17,12 +13,11 @@ bun = "latest"
 "npm:@vercel/vc-native" = "latest"
 pnpm = "latest"
 uv = "latest"
-# rust = "latest"
-rust = "nightly"
+rust = { version = "latest", components = "rust-src,rust-analyzer" }
+# rust = "nightly"
 "cargo:cargo-binstall" = "latest"
 "cargo:create-tauri-app" = "latest"
 "cargo:tauri-cli" = "2"
-rust-analyzer = "latest"
 "pipx:ruff" = "latest"
 "pipx:ty" = "latest"
 usage = "latest"
@@ -41,4 +36,9 @@ neovim = "stable"
 go = "latest"
 "npm:@openai/codex" = "latest"
 "pypi:yt-dlp" = "latest"
+starship = "latest"
+claude-code = "latest"
+"pypi:rassumfrassum" = "latest"
+"npm:typescript" = "7"
+"pipx:rassumfrassum" = "latest"
 
