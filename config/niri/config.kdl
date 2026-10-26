@@ -1,152 +1,156 @@
-// niri config — goes in ~/.config/niri/config.kdl
-// Validate with: niri validate
+// niri 26.04 -- https://niri-wm.github.io/niri/
+// Port of ~/.config/hypr/hyprland.lua. Workspaces are per monitor and dynamic, so the
+// Hyprland block/workspace engine has no counterpart. Check with: niri validate
 
-gestures {
-    hot-corners {
-        off
-    }
-}
+// Outputs belong to nwg-displays (monitor.kdl). optional: a missing file must not take the
+// whole config down (niri would fall back to its built-in default). On a fresh machine the
+// startup line seeds it from monitor-example.kdl and the file watcher reloads.
+// Argument before the property on purpose: nwg-displays 0.4.4 greps for `include "monitor.kdl"`.
+include "monitor.kdl" optional=true
+spawn-sh-at-startup "[ -e ~/.config/niri/monitor.kdl ] || cp ~/.config/niri/monitor-example.kdl ~/.config/niri/monitor.kdl"
+
+// Noctalia owns the bar, notifications, lock screen, wallpaper and OSDs. niri sends children's
+// stdout/stderr to /dev/null, so a dead daemon fails silently; SUPER+SHIFT+R restarts it.
+spawn-at-startup "noctalia" "--daemon"
+spawn-at-startup "vicinae" "server"
+
 input {
-    warp-mouse-to-focus
     keyboard {
-        xkb {
-            layout "us"
-        }
+        xkb { layout "us"; options "ctrl:nocaps"; }
         repeat-delay 200
         repeat-rate 35
     }
+    // Hyprland touchpad defaults: tap on, disable-while-typing on, natural scroll off.
     touchpad {
         tap
-        natural-scroll
+        dwt
     }
-    // Focus follows mouse, comment out if you hate it
+    // follow_mouse 1. The 0% keeps niri from scrolling the view to a half-visible window.
     focus-follows-mouse max-scroll-amount="0%"
+    warp-mouse-to-focus
 }
 
-// Fallback: any monitor lights up at preferred mode.
-// Name specific outputs with `niri msg outputs` if you need per-monitor tweaks.
-// output "eDP-1" {
-//     scale 1.0
-// }
-
+// Hyprland general: gaps 5/5, border 2 on every window (default white active, grey inactive).
+// niri's gaps apply at the screen edges too, so one value covers gaps_in and gaps_out.
 layout {
-    gaps 8
-    center-focused-column "never"
-
-    preset-column-widths {
-        proportion 0.33333
-        proportion 0.5
-        proportion 0.66667
-    }
-    default-column-width { proportion 0.5; }
-
-    focus-ring {
+    gaps 5
+    focus-ring { off; }
+    border {
         width 2
-        active-color "#7fc8ff"
-        inactive-color "#505050"
+        active-color "#ffffff"
+        inactive-color "#444444"
     }
 }
 
-// Session helpers — swap in your own picks
-spawn-at-startup "noctalia"
-spawn-at-startup "mako"
-// spawn-at-startup "swaybg" "-i" "~/Pictures/wall.png"
-
-window-rule {
-  // Rounded corners for a modern look.
-  geometry-corner-radius 5
-
-  // Clips window contents to the rounded corner boundaries.
-  clip-to-geometry true
-}
-
-// Floating Noctalia settings window.
-window-rule {
-  match app-id="dev.noctalia.Noctalia"
-  open-floating true
-  default-column-width { fixed 1080; }
-  default-window-height { fixed 920; }
-}
-
-debug {
-  // Allows notification actions and window activation from Noctalia.
-  honor-xdg-activation-with-invalid-serial
-}
+// Exported as XCURSOR_SIZE to spawned apps.
+cursor { xcursor-size 24; }
 prefer-no-csd
-
-screenshot-path "~/Pictures/Screenshots/%Y-%m-%d %H-%M-%S.png"
-
-hotkey-overlay {
-    skip-at-startup
+hotkey-overlay { skip-at-startup; }
+gestures {
+    hot-corners { off; }
 }
+
+// Noctalia's settings window floats. The debug flag lets noctalia notification actions and
+// vicinae launches focus windows (both send stale activation serials).
+window-rule {
+    match app-id="dev.noctalia.Noctalia"
+    open-floating true
+    default-column-width { fixed 1080; }
+    default-window-height { fixed 920; }
+}
+debug { honor-xdg-activation-with-invalid-serial; }
 
 binds {
-    Mod+Return { spawn "alacritty"; }
+    // Binds repeat while held unless repeat=false. Hyprland's only repeating ones are the
+    // volume and brightness keys; hjkl keep repeating, as in the mango config.
+    Mod+Return repeat=false { spawn "alacritty"; }
+    Mod+Space repeat=false { spawn "vicinae" "open"; }
+    Mod+D repeat=false { spawn "vicinae" "open"; }
+    Mod+Tab repeat=false { spawn "noctalia" "msg" "window-switcher"; }
+    Mod+O repeat=false { toggle-overview; }
 
-    Mod+Ctrl+H { focus-monitor-left; }
-    Mod+Ctrl+L { focus-monitor-right; }
-    // or: Mod+Period { focus-monitor-next; }
-    Mod+Ctrl+Shift+H { move-window-to-monitor-left; }
-    Mod+Ctrl+Shift+L { move-window-to-monitor-right; }
-    Mod+D { spawn "fuzzel"; }
-    Mod+Q { close-window; }
+    Mod+Q repeat=false { close-window; }
+    Mod+V repeat=false { toggle-window-floating; }
+    Mod+F repeat=false { maximize-column; }
+    Mod+Shift+F repeat=false { fullscreen-window; }
+    Mod+E repeat=false { spawn "dolphin"; }
+    Mod+C repeat=false { center-window; }
 
-    Mod+Shift+Slash { show-hotkey-overlay; }
+    // Session: panel for the normal case, hard exit as the escape hatch.
+    Mod+M repeat=false { spawn "noctalia" "msg" "panel-toggle" "session"; }
+    Mod+Shift+M repeat=false { quit skip-confirmation=true; }
+    // Any key press or pointer motion turns the screens back on; key releases do not.
+    Mod+Escape repeat=false { power-off-monitors; }
+    Mod+Shift+Escape repeat=false { spawn "noctalia" "msg" "session" "lock"; }
+    // Restart noctalia, or start it: its flock guard needs the old pid gone first.
+    Mod+Shift+R repeat=false { spawn-sh "pkill -x noctalia; for _ in 1 2 3 4 5 6 7 8 9 10; do pgrep -x noctalia >/dev/null || break; sleep 0.1; done; noctalia --daemon"; }
+    // Every output off except one (a real signal loss, so an HDMI monitor drops to standby),
+    // and all back on at their configured positions. Kept, as in the Hyprland config: the
+    // internal panel (eDP/LVDS/DSI) when connected, else the leftmost enabled output, so a
+    // desktop or clamshell never goes dark. Transient IPC state: a saved change to any
+    // output block forgets it. Needs jq.
+    Mod+Alt+Escape repeat=false { spawn-sh r#"niri msg -j outputs | jq -r '[to_entries[] | select(.value.logical != null)] | sort_by(.value.logical.x, .value.logical.y) | ((map(select(.key | test("^(eDP|LVDS|DSI)"))) | first) // .[0]) as $keep | .[] | select(.key != $keep.key) | .key' | xargs -r -I{} niri msg output {} off"#; }
+    Mod+Alt+Grave repeat=false { spawn-sh "niri msg -j outputs | jq -r 'keys[]' | xargs -r -I{} niri msg output {} on"; }
 
-    // Focus movement
-    Mod+H { focus-column-left; }
-    Mod+L { focus-column-right; }
+    Mod+N repeat=false { spawn "noctalia" "msg" "panel-toggle" "control-center"; }
+    Mod+Comma repeat=false { spawn "noctalia" "msg" "settings-toggle"; }
+    Mod+B repeat=false { spawn "noctalia" "msg" "bar-toggle"; }
+
+    Print repeat=false { spawn "noctalia" "msg" "screenshot-region"; }
+    Shift+Print repeat=false { spawn "noctalia" "msg" "screenshot-fullscreen"; }
+    Ctrl+Print repeat=false { spawn "noctalia" "msg" "screenshot-fullscreen" "all"; }
+
+    // Focus and move, vim keys; left/right cross to the next monitor at the edge.
+    Mod+H { focus-column-or-monitor-left; }
     Mod+J { focus-window-down; }
     Mod+K { focus-window-up; }
-
-    // Move windows/columns
-    Mod+Shift+H { move-column-left; }
-    Mod+Shift+L { move-column-right; }
+    Mod+L { focus-column-or-monitor-right; }
+    Mod+Shift+H { move-column-left-or-to-monitor-left; }
     Mod+Shift+J { move-window-down; }
     Mod+Shift+K { move-window-up; }
+    Mod+Shift+L { move-column-right-or-to-monitor-right; }
 
-    // Column sizing
-    Mod+R { switch-preset-column-width; }
-    Mod+F { maximize-column; }
-    Mod+Shift+F { fullscreen-window; }
-    Mod+Minus { set-column-width "-10%"; }
-    Mod+Equal { set-column-width "+10%"; }
+    // Workspaces are per monitor; an index past the last lands on the trailing empty one.
+    // Moving a window follows it, like Hyprland's movetoworkspace. 0 is workspace 10.
+    Mod+1 repeat=false { focus-workspace 1; }
+    Mod+2 repeat=false { focus-workspace 2; }
+    Mod+3 repeat=false { focus-workspace 3; }
+    Mod+4 repeat=false { focus-workspace 4; }
+    Mod+5 repeat=false { focus-workspace 5; }
+    Mod+6 repeat=false { focus-workspace 6; }
+    Mod+7 repeat=false { focus-workspace 7; }
+    Mod+8 repeat=false { focus-workspace 8; }
+    Mod+9 repeat=false { focus-workspace 9; }
+    Mod+0 repeat=false { focus-workspace 10; }
+    Mod+Shift+1 repeat=false { move-window-to-workspace 1; }
+    Mod+Shift+2 repeat=false { move-window-to-workspace 2; }
+    Mod+Shift+3 repeat=false { move-window-to-workspace 3; }
+    Mod+Shift+4 repeat=false { move-window-to-workspace 4; }
+    Mod+Shift+5 repeat=false { move-window-to-workspace 5; }
+    Mod+Shift+6 repeat=false { move-window-to-workspace 6; }
+    Mod+Shift+7 repeat=false { move-window-to-workspace 7; }
+    Mod+Shift+8 repeat=false { move-window-to-workspace 8; }
+    Mod+Shift+9 repeat=false { move-window-to-workspace 9; }
+    Mod+Shift+0 repeat=false { move-window-to-workspace 10; }
 
-    // Workspaces (niri's are dynamic, per-monitor, vertical)
-    Mod+U { focus-workspace-down; }
-    Mod+I { focus-workspace-up; }
-    Mod+Shift+U { move-column-to-workspace-down; }
-    Mod+Shift+I { move-column-to-workspace-up; }
-    Mod+1 { focus-workspace 1; }
-    Mod+2 { focus-workspace 2; }
-    Mod+3 { focus-workspace 3; }
-    Mod+4 { focus-workspace 4; }
-    Mod+Shift+1 { move-column-to-workspace 1; }
-    Mod+Shift+2 { move-column-to-workspace 2; }
-    Mod+Shift+3 { move-column-to-workspace 3; }
-    Mod+Shift+4 { move-column-to-workspace 4; }
+    // Monitors in list order, wrapping, like Hyprland's -1/+1.
+    Mod+BracketLeft repeat=false { focus-monitor-previous; }
+    Mod+BracketRight repeat=false { focus-monitor-next; }
+    Mod+Shift+BracketLeft repeat=false { move-window-to-monitor-previous; }
+    Mod+Shift+BracketRight repeat=false { move-window-to-monitor-next; }
 
-    // Consume/expel windows into/out of columns
-    //Mod+Comma { consume-window-into-column; }
-    Mod+Period { expel-window-from-column; }
+    // Wheel through workspaces. Mod+left drag moves and Mod+right drag resizes, built in.
+    Mod+WheelScrollDown cooldown-ms=150 { focus-workspace-down; }
+    Mod+WheelScrollUp cooldown-ms=150 { focus-workspace-up; }
 
-    // Screenshots
-    Print { screenshot; }
-    Ctrl+Print { screenshot-screen; }
-    Alt+Print { screenshot-window; }
-
-    Mod+Space { spawn-sh "noctalia msg panel-toggle launcher"; }
-    Mod+S { spawn-sh "noctalia msg panel-toggle control-center"; }
-    Mod+Comma { spawn-sh "noctalia msg settings-toggle"; }
-    Alt+Tab { spawn-sh "noctalia msg window-switcher"; }
-    // Niri has a built-in window switcher you might want to try it to see which one you prefer.
-
-    // Audio & Brightness
-    XF86AudioRaiseVolume { spawn-sh "noctalia msg volume-up"; }
-    XF86AudioLowerVolume { spawn-sh "noctalia msg volume-down"; }
-    XF86AudioMute { spawn-sh "noctalia msg volume-mute"; }
-    XF86MonBrightnessUp { spawn-sh "noctalia msg brightness-up"; }
-    XF86MonBrightnessDown { spawn-sh "noctalia msg brightness-down"; }
-
-    Mod+Shift+E { quit; }
+    // Hardware keys via noctalia so every change draws an OSD; they work on the lock screen.
+    XF86AudioRaiseVolume allow-when-locked=true { spawn "noctalia" "msg" "volume-up"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn "noctalia" "msg" "volume-down"; }
+    XF86AudioMute allow-when-locked=true repeat=false { spawn "noctalia" "msg" "volume-mute"; }
+    XF86AudioMicMute allow-when-locked=true repeat=false { spawn "noctalia" "msg" "mic-mute"; }
+    XF86MonBrightnessUp allow-when-locked=true { spawn "noctalia" "msg" "brightness-up"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn "noctalia" "msg" "brightness-down"; }
+    XF86AudioPlay allow-when-locked=true repeat=false { spawn "noctalia" "msg" "media" "toggle"; }
+    XF86AudioNext allow-when-locked=true repeat=false { spawn "noctalia" "msg" "media" "next"; }
+    XF86AudioPrev allow-when-locked=true repeat=false { spawn "noctalia" "msg" "media" "previous"; }
 }

@@ -1,0 +1,11 @@
+// Seed for a fresh machine: the startup line in config.kdl copies this to monitor.kdl when
+// that file is missing. nwg-displays then overwrites monitor.kdl on every Apply.
+// Nothing is active, so niri picks mode, scale and position itself. To pin an output,
+// uncomment and use a name from `niri msg outputs` (connector or "Make Model Serial").
+
+// output "eDP-1" {
+//     mode "1920x1080@60.000"
+//     scale 1
+//     position x=0 y=0
+//     variable-refresh-rate
+// }
